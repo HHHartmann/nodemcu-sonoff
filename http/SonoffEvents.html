@@ -1,0 +1,134 @@
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<!--script src="angular.min.js"></script-->
+<style> .in-edit { background-color: lightgreen;  } </style>
+<head></head>
+<body>
+<h1>Sonoff timer events</h1>
+<div ng-app="main" ng-controller="mainCtrl">
+<h2>Upcoming Events</h2>
+<h2>Rules</h2>
+<table>
+<th>Nr</th><th>Time</th><th>Switch</th><th>Repeat</th><th></th>
+<tr ng-repeat="x in rules" ng-click="edit($index)" ng-class="editing && editIndex == $index ? 'in-edit' : ''">
+<td >{{$index + 1}}</td><td >{{toTime(x.time)}}</td><td >{{x.action}}</td><td >{{x.repeat}}</td>
+<td ><button ng-click="edit($index)">edit</button><button ng-click="delete($index)">delete</button></td>
+</tr>
+</table>
+
+<button ng-click="add()">Add new Rule</button>
+<button ng-click="saveRules(rules)">Save Rule</button>
+
+<div id="overlay" ng-if="editing">
+	<h3>Edit Rule Nr.: {{editIndex + 1}}</h3>
+	<div>
+	<form ng-submit="finishEdit()">
+		<div>Time: <input type="time" ng-model="rules[editIndex].time"></div>
+		<div><label>Switch
+		<select ng-model="rules[editIndex].action">
+				<option>On</option>
+				<option>Off</option>
+			</select>
+		</label></div>
+		<div><label>Repeat 
+			<select ng-model="rules[editIndex].repeat">
+				<option>never</option>
+				<option>every day</option>
+				<option>every working day</option>
+				<option>every week</option>
+			</select>
+		</label></div>
+		<br/>
+		<input type="submit" value="OK">
+	</form>
+	</div>
+
+</div><!-- overlay -->
+
+<script>
+var app = angular.module('main', []);
+app.controller('mainCtrl', function($scope, $http) {
+	$scope.editing = false;
+
+	$scope.edit = function(index) {
+		$scope.editing = true;
+		$scope.editIndex = index;
+	}
+	
+	$scope.finishEdit = function() {
+		$scope.editing = false;
+	}
+	
+	$scope.delete = function(index) {
+		$scope.rules.splice(index,1);
+	}
+	
+	$scope.add = function() {
+		$scope.editing = true;
+		$scope.editIndex = $scope.rules.length;
+		$scope.rules.push({"time": toDate("12:00")});
+	}
+	
+	$scope.toTime = function(time) {
+		return time.getHours() + ":" + time.getMinutes();
+	}
+
+	$scope.saveRules = function(rules){
+		$http.put("save-json.lua", {"key": "Sonoff-Rules.json", "value": replaceDatesToTimes(rules) });
+	}
+	
+    $http.get("Sonoff-Rules.json")
+    .then(function(response) {
+        //First function handles success
+		$scope.rules = response.data;
+		$scope.rules = replaceTimesToDates($scope.rules);
+    }, function(response) {
+        //Second function handles error
+		$scope.rules = [
+	{
+		"time": "1:12",
+		"action": "On",
+		"repeat": "never"
+	},
+	{
+		"time": "16:45",
+		"action": "Off",
+		"repeat": "every day"
+	}
+];
+		$scope.rules = replaceTimesToDates($scope.rules);
+        $scope.content = "Something went wrong";
+    });
+}); 
+
+function replaceDatesToTimes(rules) {
+	for (i = 0; i < rules.length; i++) {
+		rules[i].time = toTime(rules[i].time);
+	} 
+	return rules;
+}
+
+function replaceTimesToDates(rules) {
+	for (i = 0; i < rules.length; i++) {
+		rules[i].time = toDate(rules[i].time);
+	} 
+	return rules;
+}
+
+function toDate(time) {
+	var theDate = new Date();
+	time = time.split(":");
+	theDate.setHours(time[0], time[1], 0, 0);
+	return theDate;
+}
+
+function toTime(time) {
+	return time.getHours() + ":" + time.getMinutes();
+}
+
+
+</script> 
+</div>
+
+</body>
+</html>

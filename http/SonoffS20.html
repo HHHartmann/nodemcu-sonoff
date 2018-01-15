@@ -1,0 +1,33 @@
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+   <head>
+     <title>Sonoff S20 control</title>
+   </head>
+   <body>
+	  <div ng-app="main" ng-controller="mainCtrl">
+		  <div>
+            <h2>Switch Relay</h2>
+			<button ng-click="command('on')">On</button>
+			<button ng-click="command('off')">Off</button>
+		  </div>
+		  <div>
+            <h2>Restart device</h2>
+			<button ng-click="command('restart')">Restart</button>
+		  </div>
+		  <div>
+			<h2>Upcoming Events</h2>
+		  </div>
+		  <div>
+			<a href="SonoffEvents.html">Edit rules</a>
+		  </div>
+<script>
+var app = angular.module('main', []);
+app.controller('mainCtrl', function($scope, $http) {
+	$scope.command = function(state){
+		$http.post("SonoffS20.lua", {"action": state});
+	}
+});
+</script>
+      </div>
+   </body>
+</html>
